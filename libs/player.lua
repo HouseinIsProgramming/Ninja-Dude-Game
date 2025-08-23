@@ -1,97 +1,154 @@
+local Anim = require("libs.Animation")
+
 local player = {}
 
 function player:load()
 	local img_base_path = "src/images/entities/player"
 
-	local idle_sprite_paths = {
-		img_base_path .. "/idle/00.png",
-		img_base_path .. "/idle/01.png",
-		img_base_path .. "/idle/02.png",
-		img_base_path .. "/idle/03.png",
-		img_base_path .. "/idle/04.png",
-		img_base_path .. "/idle/05.png",
-		img_base_path .. "/idle/06.png",
-		img_base_path .. "/idle/07.png",
-		img_base_path .. "/idle/08.png",
-		img_base_path .. "/idle/09.png",
+	local path_suffixes = {
+		idle_suffixes = {
+			"/idle/00.png",
+			"/idle/01.png",
+			"/idle/02.png",
+			"/idle/03.png",
+			"/idle/04.png",
+			"/idle/05.png",
+			"/idle/06.png",
+			"/idle/07.png",
+			"/idle/08.png",
+			"/idle/09.png",
+			"/idle/10.png",
+			"/idle/11.png",
+			"/idle/12.png",
+			"/idle/13.png",
+			"/idle/14.png",
+			"/idle/15.png",
+			"/idle/16.png",
+			"/idle/17.png",
+			"/idle/18.png",
+			"/idle/19.png",
+			"/idle/20.png",
+			"/idle/21.png",
+		},
+
+		jump_suffixes = {
+			"/jump/0.png",
+		},
+
+		run_suffixes = {
+			"/run/0.png",
+			"/run/1.png",
+			"/run/2.png",
+			"/run/3.png",
+			"/run/4.png",
+			"/run/5.png",
+			"/run/6.png",
+			"/run/7.png",
+		},
+
+		slide_suffixes = {
+			"/slide/0.png",
+		},
+
+		wall_slide_suffixes = {
+			"/wall_slide/0.png",
+		},
 	}
 
-	self.paddingY = 3
 	self.paddingX = 2
+	self.paddingT = 1
 
-	self.idle_frames = {}
-	for i, path in ipairs(idle_sprite_paths) do
-		-- self.idle_frames[i] = love.graphics.newImage(path)
-		local img = love.graphics.newImage(path)
-		local full_width = img:getWidth()
-		local full_height = img:getHeight()
+	self.animations = {
+		idle = Anim:new(
+			path_suffixes.idle_suffixes,
+			img_base_path,
+			0.1,
+			self.paddingX,
+			self.paddingT
+		),
+		jump = Anim:new(
+			path_suffixes.jump_suffixes,
+			img_base_path,
+			0.1,
+			self.paddingX,
+			self.paddingT
+		),
+		run = Anim:new(
+			path_suffixes.run_suffixes,
+			img_base_path,
+			0.1,
+			self.paddingX,
+			self.paddingT
+		),
+		slide = Anim:new(
+			path_suffixes.slide_suffixes,
+			img_base_path,
+			0.1,
+			self.paddingX,
+			self.paddingT
+		),
+		wall_slide = Anim:new(
+			path_suffixes.wall_slide_suffixes,
+			img_base_path,
+			0.1,
+			self.paddingX,
+			self.paddingT
+		),
+	}
 
-		local visible_quad = {
-			x = self.paddingX,
-			y = self.paddingY,
-			w = full_width - (self.paddingX * 2),
-			h = full_height - self.paddingY,
-		}
+	self.current_animation = self.animations.idle
 
-		local quad = love.graphics.newQuad(
-			visible_quad.x,
-			visible_quad.y,
-			visible_quad.w,
-			visible_quad.h,
-			full_width,
-			full_height
-		)
-		self.idle_frames[i] = {
-			img = img,
-			qd = quad,
-			vis_w = visible_quad.w,
-			vis_h = visible_quad.h,
-		}
-	end
-
-	self.current_frame_index = 1
-	self.frame_duration = 0.1
-	self.animation_timer = 0
+	self.state = "idle"
+	self.facing = "right"
 
 	self.x = love.graphics.getWidth() / 2
 	self.y = love.graphics.getHeight() / 2
 
 	self.scale = 5
 
-	self.base_width = self.idle_frames[1].vis_w
-	self.base_height = self.idle_frames[1].vis_h
-
 	self.speed = 1000
 
+	self.base_width = self.animations.idle.base_width
+	self.base_height = self.animations.idle.base_height
 	self.width = self.base_width * self.scale
 	self.height = self.base_height * self.scale
 end
 
 function player:update(dt)
-	self.animation_timer = self.animation_timer + dt
-	if self.animation_timer > self.frame_duration then
-		self.current_frame_index = self.current_frame_index + 1
-		if self.current_frame_index > #self.idle_frames then
-			self.current_frame_index = 1
-		end
-		self.animation_timer = 0
-	end
-
 	self:movement(dt)
+	self:animation_state(dt)
 	self:checkBoundries()
 	self:logEverything()
 end
 
 function player:draw()
-	love.graphics.draw(
-		self.idle_frames[self.current_frame_index].img,
-		self.idle_frames[self.current_frame_index].qd,
-		self.x,
-		self.y,
-		0,
-		self.scale,
-		self.scale
-	)
+	self.current_animation:draw(self.x, self.y, 0, self.scale, self.scale)
+end
+
+function player:animation_state(dt)
+	self.current_animation:update(dt)
+
+	local new_state = "idle"
+	if love.keyboard.isDown("a") then
+		new_state = "run"
+		self.facing = "left"
+	elseif love.keyboard.isDown("d") then
+		new_state = "run"
+		self.facing = "right"
+	elseif love.keyboard.isDown("w") then
+		new_state = "jump"
+	elseif love.keyboard.isDown("s") then
+		new_state = "slide"
+	end
+
+	-- Switch animation if state changed
+	if new_state ~= self.state then
+		self.state = new_state
+		-- Reset animation to first frame when switching
+		self.current_animation = self.animations[self.state]
+		self.current_animation.current_frame_index = 1
+		self.current_animation.animation_timer = 0
+	end
 end
 
 function player:movement(dt)

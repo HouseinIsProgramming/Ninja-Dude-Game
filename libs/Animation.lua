@@ -2,7 +2,7 @@ local Animation = {}
 Animation.__index = Animation
 
 --- this creates a new Animation object
----@param sprite_path_suffixes string[]
+---@param sprite_path_suffixes table
 ---@param sprite_base_path string
 ---@param frame_duration number
 ---@param paddingX number
@@ -23,37 +23,34 @@ function Animation:new(
 	anim.animation_timer = 0
 
 	anim.paddingX = paddingX
-	anim.paddingY = paddingT
+	anim.paddingT = paddingT
 
 	local calculated_base_width = 0
 	local calculated_base_height = 0
 
-	-- local img_base_path = "src/images/entities/player"
-	--
-	-- local idle_sprite_paths = {
-	-- 	img_base_path .. "/idle/00.png",
-	-- 	img_base_path .. "/idle/01.png",
-	-- 	img_base_path .. "/idle/02.png",
-	-- 	img_base_path .. "/idle/03.png",
-	-- 	img_base_path .. "/idle/04.png",
-	-- 	img_base_path .. "/idle/05.png",
-	-- 	img_base_path .. "/idle/06.png",
-	-- 	img_base_path .. "/idle/07.png",
-	-- 	img_base_path .. "/idle/08.png",
-	-- 	img_base_path .. "/idle/09.png",
-	-- }
-
 	for i, path_s in ipairs(sprite_path_suffixes) do
 		local full_path = sprite_base_path .. path_s
-		local img = love.graphics.newImage(full_path)
+
+		-- Load as ImageData first, then process to remove black background
+		local imageData = love.image.newImageData(full_path)
+
+		imageData:mapPixel(function(_, _, r, g, b, a)
+			-- If pixel is black (or very close to black), make it transparent
+			if r < 0.1 and g < 0.1 and b < 0.1 then
+				return r, g, b, 0 -- Set alpha to 0 (transparent)
+			end
+			return r, g, b, a -- Keep original pixel
+		end)
+
+		local img = love.graphics.newImage(imageData)
 		local full_width = img:getWidth()
 		local full_height = img:getHeight()
 
 		local visible_quad = {
-			x = self.paddingX,
-			y = self.paddingY,
-			w = full_width - (self.paddingX * 2),
-			h = full_height - self.paddingY,
+			x = anim.paddingX,
+			y = anim.paddingT,
+			w = full_width - (anim.paddingX * 2),
+			h = full_height - anim.paddingT,
 		}
 
 		local quad = love.graphics.newQuad(
@@ -87,7 +84,7 @@ function Animation:update(dt)
 	self.animation_timer = self.animation_timer + dt
 	if self.animation_timer > self.frame_duration then
 		self.current_frame_index = self.current_frame_index + 1
-		if self.current_frame_index > #self.idle_frames then
+		if self.current_frame_index > #self.frame_data then
 			self.current_frame_index = 1
 		end
 		self.animation_timer = 0
