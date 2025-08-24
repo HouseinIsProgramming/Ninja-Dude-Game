@@ -176,18 +176,24 @@ function player:update(dt)
 end
 
 function player:draw()
-	local current_animation_data = self.current_animation.frame_data[self.current_animation.current_frame_index]
-
 	local px, py = self.body:getPosition()
 	local rotation = self.body:getAngle()
 
-	local draw_x = (px * PPM) - (self.width / 2)
-	local draw_y = (py * PPM) - (self.height / 2)
+	-- Convert physics position to pixel position (origin handles centering)
+	local draw_x = px * PPM
+	local draw_y = py * PPM
 
+	-- Origin centers the sprite (using unscaled base dimensions)
 	local origin_x = self.base_width / 2
 	local origin_y = self.base_height / 2
 
-	self.current_animation:draw(draw_x, draw_y, rotation, self.scale, self.scale, origin_x, origin_y)
+	-- Handle facing direction with X-axis mirroring
+	local scale_x = self.scale
+	if self.facing == "left" then
+		scale_x = -self.scale  -- Negative scale flips horizontally
+	end
+
+	self.current_animation:draw(draw_x, draw_y, rotation, scale_x, self.scale, origin_x, origin_y)
 end
 
 function player:logEverything()
