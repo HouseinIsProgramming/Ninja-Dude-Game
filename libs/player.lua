@@ -140,13 +140,13 @@ function player:update(dt)
 		self.body:setLinearVelocity(math.sign(x) * (self.speed / PPM), vy)
 	end
 
-	self:checkBoundries()
-	self:logEverything()
+	-- self:checkBoundries()
+	-- self:logEverything()
 end
 
 function player:draw()
-	local px, py = self.body.getPosition(self)
-	local rotation = self.body.getAngle(self)
+	local px, py = self.body:getPosition()
+	local rotation = self.body:getAngle()
 
 	local draw_x = (px * PPM) - (self.width / 2)
 	local draw_y = (py * PPM) - (self.width / 2)
