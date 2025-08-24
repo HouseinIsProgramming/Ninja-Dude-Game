@@ -7,13 +7,7 @@ Animation.__index = Animation
 ---@param frame_duration number
 ---@param paddingX number
 ---@param paddingT number
-function Animation:new(
-	sprite_path_suffixes,
-	sprite_base_path,
-	frame_duration,
-	paddingX,
-	paddingT
-)
+function Animation:new(sprite_path_suffixes, sprite_base_path, frame_duration, paddingX, paddingT)
 	local anim = {}
 	setmetatable(anim, self)
 
@@ -93,19 +87,7 @@ end
 
 function Animation:draw(x, y, r, sx, sy, ox, oy, kx, ky)
 	local curr_frame = self.frame_data[self.current_frame_index]
-	love.graphics.draw(
-		curr_frame.img,
-		curr_frame.qd,
-		x,
-		y,
-		r,
-		sx,
-		sy,
-		ox,
-		oy,
-		kx,
-		ky
-	)
+	love.graphics.draw(curr_frame.img, curr_frame.qd, x, y, r, sx, sy, ox, oy, kx, ky)
 end
 
 return Animation

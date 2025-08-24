@@ -2,6 +2,20 @@ local Anim = require("libs.Animation")
 
 local player = {}
 
+local physicsWorld
+local PPM
+
+function player:setPhysicsContext(worldRef, ppmRef)
+	physicsWorld = worldRef
+	PPM = ppmRef
+end
+
+player.body = nil
+player.fixture = nil
+player.shape = nil
+
+player.isGrounded = false
+
 function player:load()
 	local img_base_path = "src/images/entities/player"
 
@@ -59,41 +73,11 @@ function player:load()
 	self.paddingT = 1
 
 	self.animations = {
-		idle = Anim:new(
-			path_suffixes.idle_suffixes,
-			img_base_path,
-			0.1,
-			self.paddingX,
-			self.paddingT
-		),
-		jump = Anim:new(
-			path_suffixes.jump_suffixes,
-			img_base_path,
-			0.1,
-			self.paddingX,
-			self.paddingT
-		),
-		run = Anim:new(
-			path_suffixes.run_suffixes,
-			img_base_path,
-			0.1,
-			self.paddingX,
-			self.paddingT
-		),
-		slide = Anim:new(
-			path_suffixes.slide_suffixes,
-			img_base_path,
-			0.1,
-			self.paddingX,
-			self.paddingT
-		),
-		wall_slide = Anim:new(
-			path_suffixes.wall_slide_suffixes,
-			img_base_path,
-			0.1,
-			self.paddingX,
-			self.paddingT
-		),
+		idle = Anim:new(path_suffixes.idle_suffixes, img_base_path, 0.1, self.paddingX, self.paddingT),
+		jump = Anim:new(path_suffixes.jump_suffixes, img_base_path, 0.1, self.paddingX, self.paddingT),
+		run = Anim:new(path_suffixes.run_suffixes, img_base_path, 0.1, self.paddingX, self.paddingT),
+		slide = Anim:new(path_suffixes.slide_suffixes, img_base_path, 0.1, self.paddingX, self.paddingT),
+		wall_slide = Anim:new(path_suffixes.wall_slide_suffixes, img_base_path, 0.1, self.paddingX, self.paddingT),
 	}
 
 	self.current_animation = self.animations.idle
@@ -110,8 +94,25 @@ function player:load()
 
 	self.base_width = self.animations.idle.base_width
 	self.base_height = self.animations.idle.base_height
-	self.width = self.base_width * self.scale
-	self.height = self.base_height * self.scale
+
+	-- self.width = self.base_width * self.scale
+	-- self.height = self.base_height * self.scale
+	--
+
+	self.body =
+		love.physics.newBody(physicsWorld, (love.graphics.getWidth() / 2), (love.graphics.getWidth() / 2), "dynamic")
+
+	self.body:setMass(1)
+
+	self.shape = love.physics.newRectangleShape(self.base_height / PPM, self.base_width / PPM)
+
+	self.fixture = love.physics.newFixture(self.body, self.shape, 1)
+
+	self.fixture:setFriction(0.5)
+	self.fixture:setRestitution(0)
+
+	self.body:setFixedRotation(true)
+	self.body:setUserData(self)
 end
 
 function player:update(dt)
