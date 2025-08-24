@@ -98,7 +98,7 @@ function player:load()
 	self.body = love.physics.newBody(
 		physicsWorld,
 		(love.graphics.getWidth() / 2 / PPM),
-		(love.graphics.getWidth() / 2 / PPM),
+		(love.graphics.getHeight() / 2 / PPM),
 		"dynamic"
 	)
 
@@ -112,7 +112,7 @@ function player:load()
 	self.fixture:setRestitution(0)
 
 	self.body:setFixedRotation(true)
-	self.body:setUserData(self)
+	self.fixture:setUserData(self)
 end
 
 function player:update(dt)
@@ -120,27 +120,25 @@ function player:update(dt)
 	local vx, vy = self.body:getLinearVelocity()
 
 	if love.keyboard.isDown("space") and self.isGrounded then
-		self.body:applyLinearImpulse(0, -10 * self.body:getMass())
+		self.body:applyLinearImpulse(0, -60 * self.body:getMass())
 		self.isGrounded = false
 	end
 
 	local target_vx = 0
-	if not love.keyboard.isDown("a") and not love.keyboard.isDown("d") then
-		if love.keyboard.isDown("a") then
-			target_vx = -self.speed / PPM
-			self.facing = "left"
-		end
-		if love.keyboard.isDown("d") then
-			target_vx = self.speed / PPM
-			self.facing = "right"
-		end
+	if love.keyboard.isDown("a") then
+		target_vx = -self.speed / PPM
+		self.facing = "left"
+	end
+	if love.keyboard.isDown("d") then
+		target_vx = self.speed / PPM
+		self.facing = "right"
 	end
 
 	local force_x = (target_vx - vx) * self.body:getMass() * 10
 	self.body:applyForce(force_x, 0)
 
 	if math.abs(vx) > self.speed / PPM then
-		self.body:setLinearVelocity(math.sign(x) * math.abs(target_vx), vy)
+		self.body:setLinearVelocity(math.sign(vx) * self.speed / PPM, vy)
 	end
 
 	-- slow down faster

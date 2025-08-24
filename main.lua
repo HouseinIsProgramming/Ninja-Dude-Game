@@ -12,13 +12,15 @@ function love.load()
 	love.graphics.setDefaultFilter("nearest", "nearest", 1)
 	love.graphics.setBackgroundColor(0.2, 0.5, 0.8)
 
-	world = love.physics.newWorld(0, 9.81 * PPM, true)
+	world = love.physics.newWorld(0, 5 * PPM, true)
 
 	Player:setPhysicsContext(world, PPM)
+	Player:load()
+
+	-- Tell Physics.lua about the player AFTER it's loaded
+	Physics.setPlayerRef(Player)
 
 	world:setCallbacks(Physics.beginContact, Physics.endContact, Physics.preSolve, Physics.postSolve)
-
-	Player:load()
 
 	local groundWidth_px = love.graphics.getWidth()
 	local groundHeight_px = 10
@@ -51,13 +53,13 @@ function love.draw()
 	love.graphics.setLineStyle("rough")
 	love.graphics.setColor(0, 1, 0, 1)
 
-	for body in world:getBodies() do
+	for _, body in ipairs(world:getBodies()) do
 		-- Only draw active bodies for performance/clarity
 		if body:isActive() then
 			local px, py = body:getPosition()
 			local rotation = body:getAngle()
 
-			for fixture in body:getFixtures() do
+			for _, fixture in ipairs(body:getFixtures()) do
 				local shape = fixture:getShape()
 				local shape_type = shape:getType()
 
