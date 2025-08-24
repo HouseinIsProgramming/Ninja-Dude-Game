@@ -104,7 +104,7 @@ function player:load()
 
 	self.body:setMass(1)
 
-	self.shape = love.physics.newRectangleShape(self.base_width / PPM, self.base_height / PPM)
+	self.shape = love.physics.newRectangleShape(self.width / PPM, self.height / PPM)
 
 	self.fixture = love.physics.newFixture(self.body, self.shape, 1)
 
@@ -120,7 +120,7 @@ function player:update(dt)
 	local vx, vy = self.body:getLinearVelocity()
 
 	if love.keyboard.isDown("space") and self.isGrounded then
-		self.body:applyLinearImpulse(0, -60 * self.body:getMass())
+		self.body:applyLinearImpulse(0, -6 * PPM * self.body:getMass())
 		self.isGrounded = false
 	end
 
@@ -181,7 +181,7 @@ function player:draw()
 
 	-- Convert physics position to pixel position (origin handles centering)
 	local draw_x = px * PPM
-	local draw_y = py * PPM
+	local draw_y = py * PPM + 6 -- Offset sprite down by 3 pixels to close gap
 
 	-- Origin centers the sprite (using unscaled base dimensions)
 	local origin_x = self.base_width / 2
@@ -190,7 +190,7 @@ function player:draw()
 	-- Handle facing direction with X-axis mirroring
 	local scale_x = self.scale
 	if self.facing == "left" then
-		scale_x = -self.scale  -- Negative scale flips horizontally
+		scale_x = -self.scale -- Negative scale flips horizontally
 	end
 
 	self.current_animation:draw(draw_x, draw_y, rotation, scale_x, self.scale, origin_x, origin_y)

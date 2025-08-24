@@ -24,8 +24,22 @@ function M.beginContact(a, b, collision)
 	local dataB = b:getUserData()
 
 	if (dataA == PlayerRef and dataB == "ground") or (dataB == PlayerRef and dataA == "ground") then
-		PlayerRef.isGrounded = true
-		print("player is grounded in beginContact")
+		-- Get collision normal and player velocity
+		local nx, ny = collision:getNormal()
+		local vx, vy = PlayerRef.body:getLinearVelocity()
+		
+		-- Only count as grounded if:
+		-- 1. Collision is mostly vertical (not side collision)
+		-- 2. Player was falling (positive velocity) or moving slowly vertically
+		local isVerticalCollision = math.abs(ny) > 0.7
+		local wasFalling = vy > -5  -- Not moving up fast (allows for small upward velocity)
+		
+		if isVerticalCollision and wasFalling then
+			PlayerRef.isGrounded = true
+			print("player landed on ground (ny=" .. string.format("%.2f", ny) .. ", vy=" .. string.format("%.2f", vy) .. ")")
+		else
+			print("collision ignored (ny=" .. string.format("%.2f", ny) .. ", vy=" .. string.format("%.2f", vy) .. ")")
+		end
 	end
 end
 
