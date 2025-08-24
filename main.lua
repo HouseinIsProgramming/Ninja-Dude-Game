@@ -50,6 +50,51 @@ function love.draw()
 
 	love.graphics.setLineStyle("rough")
 	love.graphics.setColor(0, 1, 0, 1)
-	world:draw()
+
+	for body in world:getBodies() do
+		-- Only draw active bodies for performance/clarity
+		if body:isActive() then
+			local px, py = body:getPosition()
+			local rotation = body:getAngle()
+
+			for fixture in body:getFixtures() do
+				local shape = fixture:getShape()
+				local shape_type = shape:getType()
+
+				-- Set color based on user data
+				local userData = fixture:getUserData()
+				if userData == "ground" then
+					love.graphics.setColor(0, 1, 0, 1) -- Green for ground
+				elseif userData == Player then
+					love.graphics.setColor(1, 0, 0, 1) -- Red for player
+				else
+					love.graphics.setColor(0.5, 0.5, 0.5, 1) -- Gray for other objects
+				end
+
+				-- Convert local points (on shape) to world points (on screen)
+				-- Apply body's position, rotation, and PPM scaling
+				local points = { shape:getPoints() } -- Get points in local body coordinates (meters)
+				local worldPoints_px = {}
+				for i = 1, #points, 2 do
+					local x_local = points[i]
+					local y_local = points[i + 1]
+					-- Convert local body point to world point, then to pixels
+					local wx, wy = body:getWorldPoint(x_local, y_local)
+					table.insert(worldPoints_px, wx * PPM)
+					table.insert(worldPoints_px, wy * PPM)
+				end
+
+				-- Draw the shape as a polygon using pixel coordinates
+				love.graphics.polygon("line", worldPoints_px)
+
+				-- Optionally draw circles for CircleShape (getPoints doesn't work well for circles)
+				if shape_type == "circle" then
+					local radius = shape:getRadius()
+					love.graphics.circle("line", px * PPM, py * PPM, radius * PPM)
+				end
+			end
+		end
+	end
+
 	love.graphics.setColor(1, 1, 1, 1)
 end

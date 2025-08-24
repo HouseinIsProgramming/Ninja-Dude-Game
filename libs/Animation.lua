@@ -68,8 +68,8 @@ function Animation:new(sprite_path_suffixes, sprite_base_path, frame_duration, p
 		end
 	end
 
-	self.base_width = calculated_base_width
-	self.base_height = calculated_base_height
+	anim.base_width = calculated_base_width
+	anim.base_height = calculated_base_height
 
 	return anim
 end

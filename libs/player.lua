@@ -116,6 +116,7 @@ function player:load()
 end
 
 function player:update(dt)
+	--
 	local vx, vy = self.body:getLinearVelocity()
 
 	if love.keyboard.isDown("space") and self.isGrounded then
@@ -127,29 +128,63 @@ function player:update(dt)
 	if not love.keyboard.isDown("a") and not love.keyboard.isDown("d") then
 		if love.keyboard.isDown("a") then
 			target_vx = -self.speed / PPM
+			self.facing = "left"
 		end
 		if love.keyboard.isDown("d") then
 			target_vx = self.speed / PPM
+			self.facing = "right"
 		end
 	end
 
 	local force_x = (target_vx - vx) * self.body:getMass() * 10
-	self.body:applyForce(target_vx, 0)
+	self.body:applyForce(force_x, 0)
 
 	if math.abs(vx) > self.speed / PPM then
-		self.body:setLinearVelocity(math.sign(x) * (self.speed / PPM), vy)
+		self.body:setLinearVelocity(math.sign(x) * math.abs(target_vx), vy)
 	end
+
+	-- slow down faster
+	if target_vx == 0 and self.isGrounded then
+		local current_vx = self.body:getLinearVelocity()
+		self.body:setLinearVelocity(current_vx * 0.9, vy)
+	end
+
+	local desired_state = "idle"
+	if not self.isGrounded then
+		if vy > 5 / PPM then
+			desired_state = "wall_slide"
+		elseif vy < -5 / PPM then
+			desired_state = "jump"
+		end
+	else -- Player is grounded
+		if target_vx ~= 0 then
+			desired_state = "run"
+		else
+			desired_state = "idle"
+		end
+	end
+
+	if desired_state ~= self.state then
+		self.state = desired_state
+		self.current_animation = self.animations[self.state]
+		self.current_animation.current_frame_index = 1 -- Reset animation to first frame
+		self.current_animation.animation_timer = 0
+	end
+
+	self.current_animation:update(dt)
 
 	-- self:checkBoundries()
 	-- self:logEverything()
 end
 
 function player:draw()
+	local current_animation_data = self.current_animation.frame_data[self.current_animation.current_frame_index]
+
 	local px, py = self.body:getPosition()
 	local rotation = self.body:getAngle()
 
 	local draw_x = (px * PPM) - (self.width / 2)
-	local draw_y = (py * PPM) - (self.width / 2)
+	local draw_y = (py * PPM) - (self.height / 2)
 
 	local origin_x = self.base_width / 2
 	local origin_y = self.base_height / 2
@@ -157,71 +192,17 @@ function player:draw()
 	self.current_animation:draw(draw_x, draw_y, rotation, self.scale, self.scale, origin_x, origin_y)
 end
 
-function player:animation_state(dt)
-	self.current_animation:update(dt)
-
-	local new_state = "idle"
-	if love.keyboard.isDown("a") then
-		new_state = "run"
-		self.facing = "left"
-	elseif love.keyboard.isDown("d") then
-		new_state = "run"
-		self.facing = "right"
-	elseif love.keyboard.isDown("w") then
-		new_state = "jump"
-	elseif love.keyboard.isDown("s") then
-		new_state = "slide"
-	end
-
-	-- Switch animation if state changed
-	if new_state ~= self.state then
-		self.state = new_state
-		-- Reset animation to first frame when switching
-		self.current_animation = self.animations[self.state]
-		self.current_animation.current_frame_index = 1
-		self.current_animation.animation_timer = 0
-	end
-end
-
-function player:movement(dt)
-	if love.keyboard.isDown("a") then
-		self.x = self.x - self.speed * dt
-	end
-
-	if love.keyboard.isDown("d") then
-		self.x = self.x + self.speed * dt
-	end
-
-	if love.keyboard.isDown("w") then
-		self.y = self.y - self.speed * dt
-	end
-
-	if love.keyboard.isDown("s") then
-		self.y = self.y + self.speed * dt
-	end
-end
-
-function player:checkBoundries()
-	if self.x > love.graphics.getWidth() - self.width then
-		self.x = love.graphics.getWidth() - self.width
-	end
-	if self.x < 0 then
-		self.x = 0
-	end
-	if self.y > love.graphics.getHeight() - self.height then
-		self.y = love.graphics.getHeight() - self.height
-	end
-	if self.y < 0 then
-		self.y = 0
-	end
-end
-
 function player:logEverything()
-	print("player.x: " .. self.x)
-	print("player.y: " .. self.y)
-	print("player.width: " .. self.width)
-	print("player.height: " .. self.height)
-	print("player.speed: " .. self.speed)
+	local px, py = self.body:getPosition() -- Get position in meters
+	local vx, vy = self.body:getLinearVelocity() -- Get velocity in meters/second
+
+	print("player.physics_x (m): " .. px .. ", physics_y (m): " .. py)
+	print("player.vx (m/s): " .. vx .. ", vy (m/s): " .. vy)
+	print("player.width (scaled visual): " .. self.width) -- Visual width
+	print("player.height (scaled visual): " .. self.height) -- Visual height
+	print("player.speed (target, px/s): " .. self.speed)
+	print("player.state: " .. self.state)
+	print("player.isGrounded: " .. tostring(self.isGrounded))
 end
 
 return player
