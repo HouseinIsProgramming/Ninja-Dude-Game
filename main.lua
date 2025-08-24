@@ -4,6 +4,7 @@ local Physics = require("libs.Physics")
 local world
 local PPM = 32
 local groundBody
+local groundShape
 local groundFixture
 
 function love.load()
@@ -11,21 +12,25 @@ function love.load()
 	love.graphics.setDefaultFilter("nearest", "nearest", 1)
 	love.graphics.setBackgroundColor(0.2, 0.5, 0.8)
 
-	Player:load()
-
 	world = love.physics.newWorld(0, 9.81 * PPM, true)
 
-	world:setCallbacks(beginContact, endContact, preSolve, postSolve)
-
 	Player:setPhysicsContext(world, PPM)
+
+	world:setCallbacks(Physics.beginContact, Physics.endContact, Physics.preSolve, Physics.postSolve)
+
+	Player:load()
 
 	local groundWidth_px = love.graphics.getWidth()
 	local groundHeight_px = 10
 
-	GroundBody = love.physics.newBody(world, groundHeight_px, groundWidth_px, "static")
-
-	GroundShape = love.physics.newRectangleShape(groundWidth_px / PPM, groundHeight_px / PPM)
-	GroundFixture = groundBody:newFixture(GroundShape, 1)
+	groundBody = love.physics.newBody(
+		world,
+		(groundWidth_px / 2) / PPM,
+		(love.graphics.getHeight() - (groundHeight_px / 2)) / PPM,
+		"static"
+	)
+	groundShape = love.physics.newRectangleShape(groundWidth_px / PPM, groundHeight_px / PPM)
+	groundFixture = love.physics.newFixture(groundBody, groundShape, 1)
 	groundFixture:setUserData("ground")
 
 	-- PLAYER = love.graphics.newImage("src/images/entities/player/idle/00.png")

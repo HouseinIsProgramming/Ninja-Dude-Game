@@ -85,9 +85,6 @@ function player:load()
 	self.state = "idle"
 	self.facing = "right"
 
-	self.x = love.graphics.getWidth() / 2
-	self.y = love.graphics.getHeight() / 2
-
 	self.scale = 5
 
 	self.speed = 1000
@@ -95,16 +92,19 @@ function player:load()
 	self.base_width = self.animations.idle.base_width
 	self.base_height = self.animations.idle.base_height
 
-	-- self.width = self.base_width * self.scale
-	-- self.height = self.base_height * self.scale
-	--
+	self.width = self.base_width * self.scale
+	self.height = self.base_height * self.scale
 
-	self.body =
-		love.physics.newBody(physicsWorld, (love.graphics.getWidth() / 2), (love.graphics.getWidth() / 2), "dynamic")
+	self.body = love.physics.newBody(
+		physicsWorld,
+		(love.graphics.getWidth() / 2 / PPM),
+		(love.graphics.getWidth() / 2 / PPM),
+		"dynamic"
+	)
 
 	self.body:setMass(1)
 
-	self.shape = love.physics.newRectangleShape(self.base_height / PPM, self.base_width / PPM)
+	self.shape = love.physics.newRectangleShape(self.base_width / PPM, self.base_height / PPM)
 
 	self.fixture = love.physics.newFixture(self.body, self.shape, 1)
 
@@ -116,14 +116,45 @@ function player:load()
 end
 
 function player:update(dt)
-	self:movement(dt)
-	self:animation_state(dt)
+	local vx, vy = self.body:getLinearVelocity()
+
+	if love.keyboard.isDown("space") and self.isGrounded then
+		self.body:applyLinearImpulse(0, -10 * self.body:getMass())
+		self.isGrounded = false
+	end
+
+	local target_vx = 0
+	if not love.keyboard.isDown("a") and not love.keyboard.isDown("d") then
+		if love.keyboard.isDown("a") then
+			target_vx = -self.speed / PPM
+		end
+		if love.keyboard.isDown("d") then
+			target_vx = self.speed / PPM
+		end
+	end
+
+	local force_x = (target_vx - vx) * self.body:getMass() * 10
+	self.body:applyForce(target_vx, 0)
+
+	if math.abs(vx) > self.speed / PPM then
+		self.body:setLinearVelocity(math.sign(x) * (self.speed / PPM), vy)
+	end
+
 	self:checkBoundries()
 	self:logEverything()
 end
 
 function player:draw()
-	self.current_animation:draw(self.x, self.y, 0, self.scale, self.scale)
+	local px, py = self.body.getPosition(self)
+	local rotation = self.body.getAngle(self)
+
+	local draw_x = (px * PPM) - (self.width / 2)
+	local draw_y = (py * PPM) - (self.width / 2)
+
+	local origin_x = self.base_width / 2
+	local origin_y = self.base_height / 2
+
+	self.current_animation:draw(draw_x, draw_y, rotation, self.scale, self.scale, origin_x, origin_y)
 end
 
 function player:animation_state(dt)
